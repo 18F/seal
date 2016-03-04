@@ -94,6 +94,7 @@ describe 'GithubFetcher' do
 
   before do
     expect(Octokit::Client).to receive(:new).and_return(fake_octokit_client)
+    expect(fake_octokit_client).to receive(:auto_paginate=).with(true)
     expect(fake_octokit_client).to receive_message_chain('user.login')
     expect(fake_octokit_client).to receive(:search_issues).with("is:pr state:open user:alphagov").and_return(double(items: [pull_2266, pull_2248]))
 
