@@ -1,0 +1,10 @@
+bundler_args: "--deployment --jobs=3 --retry=3"
+cache: bundler
+language: ruby
+notifications:
+  email: false
+rvm:
+- ruby-2.3.0
+sudo: false
+script:
+- bundle exec rake
