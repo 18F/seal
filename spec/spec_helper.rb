@@ -17,7 +17,7 @@
 #
 require 'timecop'
 
-ENV['SEAL_ORGANISATION'] ||= "alphagov"
+ENV['SEAL_ORGANISATION'] = "alphagov"
 
 RSpec.configure do |config|
 
