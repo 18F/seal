@@ -8,10 +8,10 @@ require './lib/slack_poster.rb'
 
 # Entry point for the Seal!
 class Seal
-
   attr_reader :mode
 
-  def initialize(team, mode=nil)
+  def initialize(team, mode = nil)
+    check_presence_of_config_file
     @team = team
     @mode = mode
   end
@@ -24,6 +24,12 @@ class Seal
 
   attr_accessor :mood
 
+  def check_presence_of_config_file
+    unless File.exist?(configuration_filename)
+      raise "#{configuration_filename} is missing!"
+    end
+  end
+
   def teams
     if @team.nil? && org_config
       org_config.keys
@@ -33,47 +39,31 @@ class Seal
   end
 
   def bark_at(team)
-    message_builder = MessageBuilder.new(team_params(team), @mode)
+    message_builder = MessageBuilder.new(message_for(team), @mode)
     message = message_builder.build
-    channel = ENV["SLACK_CHANNEL"] ? ENV["SLACK_CHANNEL"] : team_config(team)['channel']
+    channel = team_config(team)['channel']
     slack = SlackPoster.new(ENV['SLACK_WEBHOOK'], channel, message_builder.poster_mood)
     slack.send_request(message)
   end
 
   def org_config
-    @org_config ||= YAML.load_file(configuration_filename) if File.exist?(configuration_filename)
+    @org_config ||= YAML.load_file(configuration_filename)
   end
 
   def configuration_filename
     @configuration_filename ||= "./config/#{ENV['SEAL_ORGANISATION']}.yml"
   end
 
-  def team_params(team)
+  def message_for(team)
     config = team_config(team)
-    if config
-      members = config['members']
-      use_labels = config['use_labels']
-      exclude_labels = config['exclude_labels']
-      exclude_titles = config['exclude_titles']
-      @quotes = config['quotes']
-    else
-      members = ENV['GITHUB_MEMBERS'] ? ENV['GITHUB_MEMBERS'].split(',') : []
-      use_labels = ENV['GITHUB_USE_LABELS'] ? ENV['GITHUB_USE_LABELS'].split(',') : nil
-      exclude_labels = ENV['GITHUB_EXCLUDE_LABELS'] ? ENV['GITHUB_EXCLUDE_LABELS'].split(',') : nil
-      exclude_titles = ENV['GITHUB_EXCLUDE_TITLES'] ? ENV['GITHUB_EXCLUDE_TITLES'].split(',') : nil
-      @quotes = ENV['SEAL_QUOTES'] ? ENV['SEAL_QUOTES'].split(',') : nil
-    end
-    return fetch_from_github(members, use_labels, exclude_labels, exclude_titles) if @mode == nil
-    @quotes
+
+    return config['quotes'] if @mode == 'quotes'
+
+    fetch_from_github(config)
   end
 
-
-def fetch_from_github(members, use_labels, exclude_labels, exclude_titles)
-    git = GithubFetcher.new(members,
-                            use_labels,
-                            exclude_labels,
-                            exclude_titles
-                           )
+  def fetch_from_github(team_config)
+    git = GithubFetcher.new(team_config)
     git.list_pull_requests
   end
 

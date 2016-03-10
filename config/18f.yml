@@ -2,9 +2,18 @@
   channel: "#open-pull-requests"
 
   exclude_titles:
-    - "[DO NOT MERGE]"
-    - DO NOT MERGE
-    - WIP
+    - '[DO NOT MERGE]'
+    - 'DO NOT MERGE'
+    - "DON'T MERGE"
+    - 'DONT MERGE'
+    - 'WORK IN PROGRESS'
+    - 'WIP'
 
   exclude_labels:
-    - wip
+    - 'wip'
+
+  ignored_repos:
+    - 'C2'
+    - 'college-choice'
+    - 'openFEC'
+    - 'openFEC-web-app'

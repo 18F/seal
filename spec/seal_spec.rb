@@ -20,10 +20,21 @@ describe Seal do
     }
   end
 
+  describe '.new' do
+    let(:team) { 'tigers' }
+
+    it 'aborts if config file is not present' do
+      expect(File).to receive(:exist?).at_least(:once).
+        with("./config/#{ENV['SEAL_ORGANISATION']}.yml").and_return(false)
+
+      expect { seal }.
+        to raise_error(RuntimeError, "./config/#{ENV['SEAL_ORGANISATION']}.yml is missing!")
+    end
+  end
+
   describe '#bark' do
     before do
       expect(ENV).to receive(:[]).once.with('SEAL_ORGANISATION').and_return('navy')
-      expect(ENV).to receive(:[]).exactly(number_of_teams).times.with('SLACK_CHANNEL')
       expect(ENV).to receive(:[]).exactly(number_of_teams).times.with('SLACK_WEBHOOK')
       expect(File).to receive(:exist?).at_least(:once).with('./config/navy.yml').and_return(true)
       expect(YAML).to receive(:load_file).and_return(org_config)
@@ -42,7 +53,7 @@ describe Seal do
       it 'fetches PRs for the tigers and only the tigers' do
         expect(GithubFetcher)
           .to receive(:new)
-          .with([], nil, nil, nil)
+          .with(org_config['tigers'])
           .and_return(instance_double(GithubFetcher, list_pull_requests: []))
 
         seal.bark
@@ -58,12 +69,12 @@ describe Seal do
         it 'fetches PRs for the lions and the tigers' do
           expect(GithubFetcher)
             .to receive(:new)
-            .with([], nil, nil, nil)
+            .with(org_config['lion'])
             .and_return(instance_double(GithubFetcher, list_pull_requests: []))
 
           expect(GithubFetcher)
             .to receive(:new)
-            .with([], nil, nil, nil)
+            .with(org_config['tigers'])
             .and_return(instance_double(GithubFetcher, list_pull_requests: []))
 
           seal.bark
