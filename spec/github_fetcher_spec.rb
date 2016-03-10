@@ -3,11 +3,7 @@ require './lib/github_fetcher'
 
 describe 'GithubFetcher' do
   subject(:github_fetcher) do
-    GithubFetcher.new(team_members_accounts,
-                      use_labels,
-                      exclude_labels,
-                      exclude_titles
-                     )
+    GithubFetcher.new(team_config)
   end
 
   let(:fake_octokit_client) { double(Octokit::Client) }
@@ -54,9 +50,15 @@ describe 'GithubFetcher' do
         }
     }
   end
-  let(:exclude_labels) { nil }
-  let(:exclude_titles) { nil }
-  let(:team_members_accounts) { %w(binaryberry boffbowsh jackscotti tekin elliotcm tommyp mattbostock) }
+
+  let(:team_config) do
+    {
+      'members' => %w(binaryberry boffbowsh jackscotti tekin elliotcm tommyp mattbostock),
+      'exclude_labels' => nil,
+      'exclude_titles' => nil,
+    }
+  end
+
   let(:pull_2266) do
     double(Sawyer::Resource,
            user: double(Sawyer::Resource, login: 'mattbostock'),
@@ -114,13 +116,14 @@ describe 'GithubFetcher' do
   end
 
   context 'labels turned on' do
-    let(:use_labels) { true }
-
     before do
+      team_config.merge!('use_labels' => true)
       expect(fake_octokit_client).to receive(:labels_for_issue).with(repo_name, 2248).and_return(blocked_and_wip)
       expect(fake_octokit_client).to receive(:labels_for_issue).with(repo_name, 2266).and_return([])
 
-      expected_open_prs['Remove all Import-related code']['labels'] = blocked_and_wip if expected_open_prs['Remove all Import-related code']
+      if expected_open_prs['Remove all Import-related code']
+        expected_open_prs['Remove all Import-related code']['labels'] = blocked_and_wip
+      end
     end
 
     context 'excluding nothing' do
@@ -128,13 +131,13 @@ describe 'GithubFetcher' do
     end
 
     context 'excluding "designer" label' do
-      let(:exclude_labels) { ['designer'] }
+      before { team_config.merge!('exclude_labels' => ['designer']) }
 
       it_behaves_like 'fetching from GitHub'
     end
 
     context 'excluding "WIP" label' do
-      let(:exclude_labels) { ['WIP'] }
+      before { team_config.merge!('exclude_labels' => ['WIP']) }
 
       it 'filters out the WIP' do
         titles = github_fetcher.list_pull_requests.keys
@@ -145,9 +148,9 @@ describe 'GithubFetcher' do
     end
 
     context 'excluding "wip" label' do
-      let(:exclude_labels) { ['wip'] }
-
       it 'filters out the wip' do
+        team_config.merge!('exclude_labels' => ['wip'])
+
         titles = github_fetcher.list_pull_requests.keys
 
         expect(titles).not_to include 'Remove all Import-related code'
@@ -157,7 +160,7 @@ describe 'GithubFetcher' do
   end
 
   context 'labels turned off' do
-    let(:use_labels) { false }
+    before { team_config.merge!('use_labels' => false) }
 
     it_behaves_like 'fetching from GitHub'
     context 'title exclusions' do
@@ -166,13 +169,13 @@ describe 'GithubFetcher' do
       end
 
       context 'excluding "BLAH BLAH BLAH" title' do
-        let(:exclude_titles) { ['BLAH BLAH BLAH'] }
+        before { team_config.merge!('exclude_titles' => ['BLAH BLAH BLAH']) }
 
         it_behaves_like 'fetching from GitHub'
       end
 
       context 'excluding "DISCUSSION" title' do
-        let(:exclude_titles) { ['FOR DISCUSSION ONLY'] }
+        before { team_config.merge!('exclude_titles' => ['FOR DISCUSSION ONLY']) }
 
         it 'filters out the DISCUSSION' do
           titles = github_fetcher.list_pull_requests.keys
@@ -183,7 +186,7 @@ describe 'GithubFetcher' do
       end
 
       context 'excluding "discussion" title' do
-        let(:exclude_titles) { ['for discussion only'] }
+        before { team_config.merge!('exclude_titles' => ['for discussion only']) }
 
         it 'filters out the discussion' do
           titles = github_fetcher.list_pull_requests.keys
@@ -191,6 +194,16 @@ describe 'GithubFetcher' do
           expect(titles).not_to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
           expect(titles).to include 'Remove all Import-related code'
         end
+      end
+    end
+
+    context 'ignoring "whitehall" repo' do
+      it 'filters out PRs from the "whitehall" repo' do
+        team_config.merge!('ignored_repos' => ['whitehall'])
+
+        titles = github_fetcher.list_pull_requests.keys
+
+        expect(titles).to be_empty
       end
     end
   end
