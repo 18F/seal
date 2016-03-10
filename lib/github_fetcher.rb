@@ -3,8 +3,6 @@ require 'octokit'
 class GithubFetcher
   ORGANISATION ||= ENV['SEAL_ORGANISATION']
 
-  attr_accessor :people
-
   def initialize(team_config)
     @github = Octokit::Client.new(:access_token => ENV['GITHUB_TOKEN'])
     @github.user.login
@@ -25,28 +23,32 @@ class GithubFetcher
 
   attr_reader :team_config
 
-  def people
-    team_config['members']
+  def global_config
+    @global_config ||= YAML.load_file('./config/global.yml')
   end
 
   def use_labels
-    team_config['use_labels']
+    global_config['use_labels']
   end
 
   def exclude_labels
-    return unless team_config['exclude_labels']
+    return unless global_config['exclude_labels']
 
-    team_config['exclude_labels'].map(&:downcase).uniq
+    global_config['exclude_labels'].map(&:downcase).uniq
   end
 
   def exclude_titles
-    return unless team_config['exclude_titles']
+    return unless global_config['exclude_titles']
 
-    team_config['exclude_titles'].map(&:downcase).uniq
+    global_config['exclude_titles'].map(&:downcase).uniq
   end
 
   def ignored_repos
-    team_config['ignored_repos'] || []
+    global_config['ignored_repos'] || []
+  end
+
+  def language
+    team_config['language']
   end
 
   def present_pull_request(pull_request, repo_name)
@@ -63,11 +65,7 @@ class GithubFetcher
   end
 
   def pull_requests_from_github
-    @github.search_issues("is:pr state:open user:#{ORGANISATION}").items
-  end
-
-  def person_subscribed?(pull_request)
-    people.empty? || people.include?("#{pull_request.user.login}")
+    @github.search_issues("is:pr state:open user:#{ORGANISATION} language:#{language}").items
   end
 
   def count_comments(pull_request, repo)

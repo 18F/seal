@@ -1,19 +1,23 @@
-18f:
-  channel: "#open-pull-requests"
+css:
+  channel: '#frontend-pull-reqs'
+  language: 'css'
 
-  exclude_titles:
-    - '[DO NOT MERGE]'
-    - 'DO NOT MERGE'
-    - "DON'T MERGE"
-    - 'DONT MERGE'
-    - 'WORK IN PROGRESS'
-    - 'WIP'
+go:
+  channel: '#go-pull-requests'
+  language: 'go'
 
-  exclude_labels:
-    - 'wip'
+javascript:
+  channel: '#js-pull-requests'
+  language: 'javascript'
 
-  ignored_repos:
-    - 'C2'
-    - 'college-choice'
-    - 'openFEC'
-    - 'openFEC-web-app'
+python:
+  channel: '#python-pull-requests'
+  language: 'python'
+
+ruby:
+  channel: '#ruby-pull-requests'
+  language: 'ruby'
+
+shell:
+  channel: '#shell-pull-requests'
+  language: 'shell'
