@@ -1,0 +1,18 @@
+exclude_titles:
+  - '[DO NOT MERGE]'
+  - 'DO NOT MERGE'
+  - "DON'T MERGE"
+  - 'DONT MERGE'
+  - "[DON'T MERGE]"
+  - 'WORK IN PROGRESS'
+  - 'WIP'
+  - '[WIP]'
+
+exclude_labels:
+  - 'wip'
+
+ignored_repos:
+  - 'C2'
+  - 'college-choice'
+  - 'openFEC'
+  - 'openFEC-web-app'

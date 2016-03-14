@@ -51,11 +51,17 @@ describe 'GithubFetcher' do
     }
   end
 
+  let(:global_config) do
+    {
+      'exclude_labels' => nil,
+      'exclude_titles' => nil
+    }
+  end
+
   let(:team_config) do
     {
-      'members' => %w(binaryberry boffbowsh jackscotti tekin elliotcm tommyp mattbostock),
-      'exclude_labels' => nil,
-      'exclude_titles' => nil,
+      'language' => nil,
+      'channel' => nil
     }
   end
 
@@ -94,117 +100,153 @@ describe 'GithubFetcher' do
     ].map { |body| double(Sawyer::Resource, body: body)}
   end
 
-  before do
+  def setup_fake_octokit_client
     expect(Octokit::Client).to receive(:new).and_return(fake_octokit_client)
+
     expect(fake_octokit_client).to receive(:auto_paginate=).with(true)
+
     expect(fake_octokit_client).to receive_message_chain('user.login')
-    expect(fake_octokit_client).to receive(:search_issues).with("is:pr state:open user:alphagov").and_return(double(items: [pull_2266, pull_2248]))
 
-    allow(fake_octokit_client).to receive(:issue_comments).with(repo_name, 2266).and_return(comments_2266)
-    allow(fake_octokit_client).to receive(:issue_comments).with(repo_name, 2248).and_return(comments_2248)
+    allow(fake_octokit_client).to receive(:issue_comments).with(repo_name, 2266).
+      and_return(comments_2266)
 
-    allow(fake_octokit_client).to receive(:pull_request).with(repo_name, 2248).and_return(pull_2248)
-    allow(fake_octokit_client).to receive(:pull_request).with(repo_name, 2266).and_return(pull_2266)
+    allow(fake_octokit_client).to receive(:issue_comments).with(repo_name, 2248).
+      and_return(comments_2248)
+
+    allow(fake_octokit_client).to receive(:pull_request).with(repo_name, 2248).
+      and_return(pull_2248)
+
+    allow(fake_octokit_client).to receive(:pull_request).with(repo_name, 2266).
+      and_return(pull_2266)
+
+    allow(github_fetcher).to receive(:global_config).and_return(global_config)
   end
 
-  shared_examples_for 'fetching from GitHub' do
-    describe '#list_pull_requests' do
-      it "displays open pull requests open on the team's repos by a team member" do
-        expect(github_fetcher.list_pull_requests).to match expected_open_prs
-      end
-    end
-  end
-
-  context 'labels turned on' do
+  context 'when the team config does not include a language' do
     before do
-      team_config.merge!('use_labels' => true)
-      expect(fake_octokit_client).to receive(:labels_for_issue).with(repo_name, 2248).and_return(blocked_and_wip)
-      expect(fake_octokit_client).to receive(:labels_for_issue).with(repo_name, 2266).and_return([])
+      setup_fake_octokit_client
 
-      if expected_open_prs['Remove all Import-related code']
-        expected_open_prs['Remove all Import-related code']['labels'] = blocked_and_wip
+      expect(fake_octokit_client).to receive(:search_issues).
+        with("is:pr state:open user:alphagov language:").
+        and_return(double(items: [pull_2266, pull_2248]))
+    end
+
+    shared_examples_for 'fetching from GitHub' do
+      describe '#list_pull_requests' do
+        it "displays open pull requests open on the team's repos by a team member" do
+          expect(github_fetcher.list_pull_requests).to match expected_open_prs
+        end
       end
     end
 
-    context 'excluding nothing' do
-      it_behaves_like 'fetching from GitHub'
-    end
+    context 'labels turned on' do
+      before do
+        global_config.merge!('use_labels' => true)
+        expect(fake_octokit_client).to receive(:labels_for_issue).with(repo_name, 2248).and_return(blocked_and_wip)
+        expect(fake_octokit_client).to receive(:labels_for_issue).with(repo_name, 2266).and_return([])
 
-    context 'excluding "designer" label' do
-      before { team_config.merge!('exclude_labels' => ['designer']) }
+        if expected_open_prs['Remove all Import-related code']
+          expected_open_prs['Remove all Import-related code']['labels'] = blocked_and_wip
+        end
+      end
 
-      it_behaves_like 'fetching from GitHub'
-    end
+      context 'excluding nothing' do
+        it_behaves_like 'fetching from GitHub'
+      end
 
-    context 'excluding "WIP" label' do
-      before { team_config.merge!('exclude_labels' => ['WIP']) }
+      context 'excluding "designer" label' do
+        before { global_config.merge!('exclude_labels' => ['designer']) }
 
-      it 'filters out the WIP' do
-        titles = github_fetcher.list_pull_requests.keys
+        it_behaves_like 'fetching from GitHub'
+      end
 
-        expect(titles).not_to include 'Remove all Import-related code'
-        expect(titles).to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
+      context 'excluding "WIP" label' do
+        before { global_config.merge!('exclude_labels' => ['WIP']) }
+
+        it 'filters out the WIP' do
+          titles = github_fetcher.list_pull_requests.keys
+
+          expect(titles).not_to include 'Remove all Import-related code'
+          expect(titles).to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
+        end
+      end
+
+      context 'excluding "wip" label' do
+        it 'filters out the wip' do
+          global_config.merge!('exclude_labels' => ['wip'])
+
+          titles = github_fetcher.list_pull_requests.keys
+
+          expect(titles).not_to include 'Remove all Import-related code'
+          expect(titles).to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
+        end
       end
     end
 
-    context 'excluding "wip" label' do
-      it 'filters out the wip' do
-        team_config.merge!('exclude_labels' => ['wip'])
+    context 'labels turned off' do
+      before { global_config.merge!('use_labels' => false) }
 
-        titles = github_fetcher.list_pull_requests.keys
+      it_behaves_like 'fetching from GitHub'
 
-        expect(titles).not_to include 'Remove all Import-related code'
-        expect(titles).to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
+      context 'title exclusions' do
+        context 'excluding no titles' do
+          it_behaves_like 'fetching from GitHub'
+        end
+
+        context 'excluding "BLAH BLAH BLAH" title' do
+          before { global_config.merge!('exclude_titles' => ['BLAH BLAH BLAH']) }
+
+          it_behaves_like 'fetching from GitHub'
+        end
+
+        context 'excluding "DISCUSSION" title' do
+          before { global_config.merge!('exclude_titles' => ['FOR DISCUSSION ONLY']) }
+
+          it 'filters out the DISCUSSION' do
+            titles = github_fetcher.list_pull_requests.keys
+
+            expect(titles).not_to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
+            expect(titles).to include 'Remove all Import-related code'
+          end
+        end
+
+        context 'excluding "discussion" title' do
+          before { global_config.merge!('exclude_titles' => ['for discussion only']) }
+
+          it 'filters out the discussion' do
+            titles = github_fetcher.list_pull_requests.keys
+
+            expect(titles).not_to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
+            expect(titles).to include 'Remove all Import-related code'
+          end
+        end
+      end
+
+      context 'ignoring "whitehall" repo' do
+        it 'filters out PRs from the "whitehall" repo' do
+          global_config.merge!('ignored_repos' => ['whitehall'])
+
+          titles = github_fetcher.list_pull_requests.keys
+
+          expect(titles).to be_empty
+        end
       end
     end
   end
 
-  context 'labels turned off' do
-    before { team_config.merge!('use_labels' => false) }
-
-    it_behaves_like 'fetching from GitHub'
-    context 'title exclusions' do
-      context 'excluding no titles' do
-        it_behaves_like 'fetching from GitHub'
-      end
-
-      context 'excluding "BLAH BLAH BLAH" title' do
-        before { team_config.merge!('exclude_titles' => ['BLAH BLAH BLAH']) }
-
-        it_behaves_like 'fetching from GitHub'
-      end
-
-      context 'excluding "DISCUSSION" title' do
-        before { team_config.merge!('exclude_titles' => ['FOR DISCUSSION ONLY']) }
-
-        it 'filters out the DISCUSSION' do
-          titles = github_fetcher.list_pull_requests.keys
-
-          expect(titles).not_to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
-          expect(titles).to include 'Remove all Import-related code'
-        end
-      end
-
-      context 'excluding "discussion" title' do
-        before { team_config.merge!('exclude_titles' => ['for discussion only']) }
-
-        it 'filters out the discussion' do
-          titles = github_fetcher.list_pull_requests.keys
-
-          expect(titles).not_to include '[FOR DISCUSSION ONLY] Remove Whitehall.case_study_preview_host'
-          expect(titles).to include 'Remove all Import-related code'
-        end
-      end
+  context 'when team config includes a language' do
+    before do
+      setup_fake_octokit_client
     end
 
-    context 'ignoring "whitehall" repo' do
-      it 'filters out PRs from the "whitehall" repo' do
-        team_config.merge!('ignored_repos' => ['whitehall'])
+    it 'adds a filter for that language to the GitHub query' do
+      team_config.merge!('language' => 'ruby')
 
-        titles = github_fetcher.list_pull_requests.keys
+      expect(fake_octokit_client).to receive(:search_issues).
+        with("is:pr state:open user:alphagov language:ruby").
+        and_return(double(items: [pull_2266, pull_2248]))
 
-        expect(titles).to be_empty
-      end
+      github_fetcher.list_pull_requests
     end
   end
 end
