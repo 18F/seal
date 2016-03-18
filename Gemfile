@@ -4,7 +4,9 @@ ruby "2.3.0"
 gem 'slack-poster', '~> 1.0.1'
 gem "octokit", "~> 4.0"
 gem "sinatra"
-gem "thin"
+gem "puma"
+gem 'clockwork'
+gem 'foreman', require: false
 
 group :test do
   gem 'guard'

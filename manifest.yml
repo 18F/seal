@@ -1,0 +1,6 @@
+---
+command: script/start
+applications:
+- name: seal
+  env:
+    SEAL_ORGANISATION: 18f

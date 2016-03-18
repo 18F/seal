@@ -93,6 +93,6 @@ class SlackPoster
   end
 
   def channel
-    @team_channel = '#seal-bot-test' if ENV["DYNO"].nil?
+    @team_channel = '#seal-bot-test' unless ENV['RACK_ENV'] == 'production'
   end
 end
