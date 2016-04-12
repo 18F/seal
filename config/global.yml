@@ -16,3 +16,5 @@ ignored_repos:
   - 'college-choice'
   - 'openFEC'
   - 'openFEC-web-app'
+  - 'identity'
+  - 'data-private'
