@@ -4,14 +4,22 @@
 ##What is it?
 
 A Slack bot forked from [binaryberry](https://github.com/binaryberry/seal) that
-checks GitHub once a day on weekdays for open pull requests across all 18F
-repos, and posts them to language-specific channels, such as
-`#ruby-pull-requests`.
+checks GitHub once a day on weekdays for open pull requests across all repos
+belonging to a GitHub organization, and posts them to language-specific Slack
+channels, such as `#ruby-pull-requests`. Notifications for individual repos can
+also be configured.
+
+The goal is to encourage people to review pull requests in a timely manner, and
+by organizing the notifications into language-specific channels, it makes it
+easier and less noisy to view pull requests that align with your expertise.
 
 ![image](https://github.com/binaryberry/seal/blob/master/images/readme/informative.png)
 ![image](https://github.com/binaryberry/seal/blob/master/images/readme/angry.png)
 
 ##How to use it?
+
+### Main configuration
+
 Create a YAML file named after your GitHub organization, and place it in the
 `config` folder. For example, `config/18f.yml`. Create entries for each
 language, and specify the Slack channel the bot should post to. For example:
@@ -20,7 +28,23 @@ language, and specify the Slack channel the bot should post to. For example:
 ruby:
   channel: '#ruby-pull-requests'
   language: 'ruby'
+
+python:
+  channel: '#python-pull-requests'
+  language: 'python'
 ```
+
+In addition to language-based entries, you can also specify a specific repo.
+For example, if a team that works on `awesome_repo` wants to integrate Seal
+into their Slack channel, they would add the following to the YAML file:
+
+```yaml
+awesome-repo:
+  channel: '#channel-for-awesome-repo'
+  repo: 'awesome-repo'
+```
+
+### Customization
 
 Modify `config/global.yml` to suit your needs. You can ignore pull requests
 whose title or labels contain certain strings, such as `WIP`. You can also
@@ -38,12 +62,15 @@ ignored_repos:
   - 'C2'
 ```
 
-Configure the required environment variables in your shell profile:
+### Environment variables
+
+Configure the required environment variables. To test the bot locally, you
+can set the variables by running the following commands in your Terminal:
 
 ```sh
 export SEAL_ORGANISATION="your_github_organisation"
-export GITHUB_TOKEN="get_your_github_token_from_yourgithub_settings"
-export SLACK_WEBHOOK="get_your_incoming_webhook_link_for_your_slack_group_channel"
+export GITHUB_TOKEN="your_github_token_from_your_github_settings"
+export SLACK_WEBHOOK="your_incoming_webhook_link_for_your_slack_group_channel"
 ```
 
 - To get a new `GITHUB_TOKEN`, head to: https://github.com/settings/tokens
@@ -52,17 +79,21 @@ export SLACK_WEBHOOK="get_your_incoming_webhook_link_for_your_slack_group_channe
   You can configure the webhook with any channel. You'll still be able to post
   to multiple channels.
 
-To test the script locally, go to Slack and create a channel or private group
-called "#seal-bot-test". Then run `./bin/seal.rb` from your command line. You
-should see a post in the #seal-bot-test channel.
+### Emojis
 
-You should also set up the following custom emojis in Slack:
+Set up the following custom emojis in Slack:
 - :informative_seal:
 - :angrier_seal:
 - :seal_of_approval:
 - :happyseal:
 
 You can use the images in `images/emoji/Everyday images` that have the corresponding names.
+
+### Test the bot
+
+To test the script locally, go to Slack and create a channel or private group
+called `#seal-bot-test`. Then run `./bin/seal.rb` from your command line. You
+should see a post in the `#seal-bot-test` channel.
 
 When that works, you can push the app to Heroku, add the `GITHUB_TOKEN` and
 `SLACK_WEBHOOK` environment variables to Heroku, and use the [Heroku scheduler
