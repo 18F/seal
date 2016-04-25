@@ -51,6 +51,10 @@ class GithubFetcher
     team_config['language']
   end
 
+  def repo
+    "#{ORGANISATION}/#{team_config['repo']}"
+  end
+
   def present_pull_request(pull_request, repo_name)
     pr = {}
     pr['title'] = pull_request.title
@@ -65,7 +69,15 @@ class GithubFetcher
   end
 
   def pull_requests_from_github
-    @github.search_issues("is:pr state:open user:#{ORGANISATION} language:#{language}").items
+    @github.search_issues(search_parameters).items
+  end
+
+  def search_parameters
+    if language
+      "is:pr state:open user:#{ORGANISATION} language:#{language}"
+    elsif repo
+      "is:pr state:open repo:#{repo}"
+    end
   end
 
   def count_comments(pull_request, repo)

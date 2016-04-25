@@ -60,8 +60,8 @@ describe 'GithubFetcher' do
 
   let(:team_config) do
     {
-      'language' => nil,
-      'channel' => nil
+      'language' => 'ruby',
+      'channel' => '#ruby'
     }
   end
 
@@ -87,6 +87,7 @@ describe 'GithubFetcher' do
            updated_at: '2015-07-17 01:00:44 UTC'
           )
   end
+
   let(:comments_2266) do [
       "You should add more seal images on the front end",
       "Sure! I have done it now",
@@ -122,12 +123,14 @@ describe 'GithubFetcher' do
     allow(github_fetcher).to receive(:global_config).and_return(global_config)
   end
 
-  context 'when the team config does not include a language' do
+  context 'when the team config does not include a language, but has a repo' do
     before do
       setup_fake_octokit_client
 
+      team_config.merge!('repo' => 'awesome_repo', 'language' => nil)
+
       expect(fake_octokit_client).to receive(:search_issues).
-        with("is:pr state:open user:alphagov language:").
+        with("is:pr state:open repo:alphagov/awesome_repo").
         and_return(double(items: [pull_2266, pull_2248]))
     end
 
@@ -240,8 +243,6 @@ describe 'GithubFetcher' do
     end
 
     it 'adds a filter for that language to the GitHub query' do
-      team_config.merge!('language' => 'ruby')
-
       expect(fake_octokit_client).to receive(:search_issues).
         with("is:pr state:open user:alphagov language:ruby").
         and_return(double(items: [pull_2266, pull_2248]))
