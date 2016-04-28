@@ -23,5 +23,13 @@ shell:
   language: 'shell'
 
 identity-idp:
-  channel: '#identity-partners'
+  channel: '#identity-dev'
   repo: 'identity-idp'
+
+identity-idv:
+  channel: '#identity-dev'
+  repo: 'identity-idv'
+
+identity-rp:
+  channel: '#identity-dev'
+  repo: 'identity-rp'
