@@ -10,7 +10,7 @@ GEM
     addressable (2.4.0)
     byebug (5.0.0)
       columnize (= 0.9.0)
-    clockwork (1.2.0)
+    clockwork (2.0.0)
       activesupport
       tzinfo
     coderay (1.1.0)
@@ -45,7 +45,7 @@ GEM
       rb-inotify (>= 0.9)
     lumberjack (1.0.9)
     method_source (0.8.2)
-    minitest (5.8.4)
+    minitest (5.9.0)
     multipart-post (2.0.0)
     nenv (0.2.0)
     notiffany (0.0.8)
