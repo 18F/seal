@@ -14,7 +14,11 @@ exclude_labels:
 ignored_repos:
   - 'C2'
   - 'college-choice'
+  - 'data-private'
+  - 'identity-dashboard'
+  - 'identity-devops'
+  - 'identity-idp'
+  - 'identity-private'
+  - 'identity-sp-rails'
   - 'openFEC'
   - 'openFEC-web-app'
-  - 'identity'
-  - 'data-private'
