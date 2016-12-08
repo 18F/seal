@@ -22,10 +22,6 @@ shell:
   channel: '#shell-pull-requests'
   language: 'shell'
 
-identity-idp:
-  channel: '#identity-dev'
-  repo: 'identity-idp'
-
 identity-idv:
   channel: '#identity-dev'
   repo: 'identity-idv'
