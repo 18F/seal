@@ -21,11 +21,3 @@ ruby:
 shell:
   channel: '#shell-pull-requests'
   language: 'shell'
-
-identity-idv:
-  channel: '#identity-dev'
-  repo: 'identity-idv'
-
-identity-rp:
-  channel: '#identity-dev'
-  repo: 'identity-rp'
